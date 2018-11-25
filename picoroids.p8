@@ -9,6 +9,18 @@ down=3
 but1=4
 but2=5
 
+ship_shp = {
+ {0,0},
+ {0,-5},
+ {4,3},
+ {-4,3}
+}
+
+ship_pos={63,63}
+ship_rot=0
+ship_vel={0,0}
+fire_ff=false -- the fire button flip-flop
+
 -- a "shape" is a list of
 -- points. the first point is
 -- the center of rotation, and
@@ -169,43 +181,50 @@ function draw_shp(s)
   local ay = pts[a][2]
   local bx = pts[b][1]
   local by = pts[b][2]
-  line(ax,ay,bx,by,8)
+  line(ax,ay,bx,by,7)
  end
 end
 
-ship_shp = {
- {0,0},
- {0,-10},
- {10,10},
- {-10,10}
-}
 
 function _init()
 end
 
-x=63
-y=63
-rot=0
+function process_dpad()
+ local x = ship_pos[1]
+ local y = ship_pos[2]
+ if btn(left) then
+  ship_rot += 0.01
+ end
+ if btn(right) then
+  ship_rot -= 0.01
+ end
+ if btn(up) then
+  y -= 1
+ end
+ if btn(down) then
+  y += 1
+ end
+ ship_pos = {x,y}
+end
+
+function shoot()
+-- TODO
+end
+
+function process_btns()
+ if btn(but1) then
+  if not fire_ff then
+   fire_ff=true
+   shoot()
+  end
+ else
+  fire_ff=false
+ end
+end
 
 function _update()
- if btn(left)
- then x -= 1
- end
- if btn(right)
- then x += 1
- end
- if btn(up)
- then y -= 1
- end
- if btn(down)
- then y += 1
- end
- if btn(but1)
- then rot -= 0.01
- end
- if btn(but2)
- then rot += 0.01
- end
+ process_dpad()
+ process_btns()
 end
 
 function _draw()
@@ -218,8 +237,8 @@ function _draw()
 
 draw_shp(
  rot_shp(
-  trans_shp(ship_shp,{x,y}),
-  rot))
+  trans_shp(ship_shp,ship_pos),
+  ship_rot))
 
 -- print("x,y,rot: "..x..","..y..","..rot)
 -- p = rot_pnt({x,y},rot)
