@@ -2,6 +2,7 @@ pico-8 cartridge // http://www.pico-8.com
 version 16
 __lua__
 
+-- button constants
 left=0
 right=1
 up=2
@@ -9,24 +10,33 @@ down=3
 but1=4
 but2=5
 
-ship_shp = {
- {0,0},
- {0,-5},
- {4,3},
- {-4,3}
-}
-
-ship_pos={63,63}
-ship_rot=0
-ship_vel={0,0}
-fire_ff=false -- the fire button flip-flop
-
 -- a "shape" is a list of
 -- points. the first point is
 -- the center of rotation, and
 -- the rest of the points form
 -- a border between which lines
 -- are drawn.
+
+-- the ship shape
+ship_shp = {
+ {0,0},
+ {5,0},
+ {-3,-3},
+ {-3,3}
+}
+
+-- the ship's position {x,y}
+ship_pos={63,63}
+-- the ship's rotation
+ship_rot=0.25
+-- the thruster force magnitude
+thrst_mag=0.05
+-- the magnitude of rotation
+rot_mag=0.02
+-- the ship's velocity vector
+ship_velv={0,0}
+-- the fire button flip-flop
+fire_ff=false
 
 -- return a negated copy of a
 -- point.
@@ -185,26 +195,51 @@ function draw_shp(s)
  end
 end
 
+-- add two vectors together
+function vadd(v1,v2)
+ return {
+  v1[1] + v2[1],
+  v1[2] + v2[2]
+ }
+end
 
-function _init()
+-- mod a point by 128
+function mod_pnt(p)
+ return {p[1]%128,p[2]%128}
+end
+
+-- move the ship by applying
+-- the velocity vector.
+function move_ship()
+ ship_pos = mod_pnt(
+  vadd(
+   ship_pos, ship_velv
+  )
+ )
+end
+
+function fire_thruster()
+ -- update the ship's velocity
+ -- vector.
+ local thrst_v = {thrst_mag, 0}
+ thrst_v = rot_pnt(
+  thrst_v, ship_rot
+ )
+ ship_velv = vadd(
+  thrst_v, ship_velv
+ )
 end
 
 function process_dpad()
- local x = ship_pos[1]
- local y = ship_pos[2]
  if btn(left) then
-  ship_rot += 0.01
+  ship_rot += rot_mag
  end
  if btn(right) then
-  ship_rot -= 0.01
+  ship_rot -= rot_mag
  end
  if btn(up) then
-  y -= 1
+  fire_thruster()
  end
- if btn(down) then
-  y += 1
- end
- ship_pos = {x,y}
 end
 
 function shoot()
@@ -222,13 +257,18 @@ function process_btns()
  end
 end
 
+function _init()
+end
+
 function _update()
  process_dpad()
  process_btns()
+ move_ship()
 end
 
 function _draw()
  cls()
+ rectfill(0,0,127,127,1)
 -- print_shp(shape1)
 -- draw_shp(shape1)
 -- draw_shp(trans_shp(shape1,{63,63}))
