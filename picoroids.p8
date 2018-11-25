@@ -37,6 +37,8 @@ rot_mag=0.02
 ship_velv={0,0}
 -- the fire button flip-flop
 fire_ff=false
+-- the teleport flip-flop
+tele_ff=false
 
 -- return a negated copy of a
 -- point.
@@ -218,9 +220,10 @@ function move_ship()
  )
 end
 
+-- fire the thruster for one
+-- frame, updating the ship's
+-- velocity vector.
 function fire_thruster()
- -- update the ship's velocity
- -- vector.
  local thrst_v = {thrst_mag, 0}
  thrst_v = rot_pnt(
   thrst_v, ship_rot
@@ -228,6 +231,16 @@ function fire_thruster()
  ship_velv = vadd(
   thrst_v, ship_velv
  )
+end
+
+-- teleport the ship to a
+-- random location.
+function teleport()
+ ship_pos = {
+  -- at least 1/2 screen away
+  ship_pos[1] + 64 + rnd(63),
+  ship_pos[2] + 64 + rnd(63)
+ }
 end
 
 function process_dpad()
@@ -254,6 +267,15 @@ function process_btns()
   end
  else
   fire_ff=false
+ end
+
+ if btn(but2) then
+  if not tele_ff then
+   tele_ff=true
+   teleport()
+  end
+ else
+  tele_ff=false
  end
 end
 
