@@ -34,11 +34,24 @@ thrst_mag=0.05
 -- the magnitude of rotation
 rot_mag=0.02
 -- the ship's velocity vector
-ship_velv={0,0}
+ship_vvec={0,0}
 -- the fire button flip-flop
 fire_ff=false
 -- the teleport flip-flop
 tele_ff=false
+
+-- a "shot" is a position, a
+-- velocity vector, and a ttl.
+
+-- the speed of bullets.
+shot_spd=2.5
+-- number of frames a bullet
+-- stays on-screen.
+shot_ttl=30
+
+-- the bullets which are
+-- currently in-flight.
+shots={}
 
 -- return a negated copy of a
 -- point.
@@ -215,7 +228,7 @@ end
 function move_ship()
  ship_pos = mod_pnt(
   vadd(
-   ship_pos, ship_velv
+   ship_pos, ship_vvec
   )
  )
 end
@@ -223,13 +236,26 @@ end
 -- fire the thruster for one
 -- frame, updating the ship's
 -- velocity vector.
-function fire_thruster()
+function fire_rthruster()
  local thrst_v = {thrst_mag, 0}
  thrst_v = rot_pnt(
   thrst_v, ship_rot
  )
- ship_velv = vadd(
-  thrst_v, ship_velv
+ ship_vvec = vadd(
+  thrst_v, ship_vvec
+ )
+end
+
+-- fire the front-facing
+-- thruster, accellerating the
+-- ship backward.
+function fire_fthruster()
+ local thrst_v = {-thrst_mag, 0}
+ thrst_v = rot_pnt(
+  thrst_v, ship_rot
+ )
+ ship_vvec = vadd(
+  thrst_v, ship_vvec
  )
 end
 
@@ -243,6 +269,79 @@ function teleport()
  }
 end
 
+function draw_shot(s)
+ local pos = s[1]
+ pset(pos[1],pos[2],7)
+end
+
+function draw_shots(s)
+ for s in all(shots) do
+  draw_shot(s)
+ end
+end
+
+-- returns a copy of a shot
+-- which has been moved.
+function move_shot(s)
+ local pos = s[1]
+ local vvec = s[2]
+ local ttl = s[3]
+ pos = mod_pnt(vadd(pos, vvec))
+ shot = {
+   pos,
+   vvec,
+   ttl-1
+ }
+ return shot
+end
+
+function move_shots()
+ shots2={}
+ for s in all(shots) do
+  add(shots2,move_shot(s))
+ end
+ shots = shots2
+end
+
+-- filter out the shots which
+-- have been on-screen for too
+-- long.
+function expire_shots()
+ shots2={}
+ for s in all(shots) do
+  local pos = s[1]
+  local vvec = s[2]
+  local ttl = s[3]
+  if ttl > 0 then
+   add(shots2,s)
+  end
+ end
+ shots = shots2
+end
+
+-- fire a new bullet.
+function shoot()
+ -- the current bullet position
+ local pos = {
+   ship_pos[1], ship_pos[2]
+ }
+ -- the bullet velocity vector
+ local vvec = {shot_spd, 0}
+ vvec = rot_pnt(
+  vvec, ship_rot
+ )
+ vvec = vadd(
+  ship_vvec, vvec
+ )
+
+ local shot = {
+  pos,
+  vvec,
+  shot_ttl
+ }
+ add(shots, shot)
+end
+
 function process_dpad()
  if btn(left) then
   ship_rot += rot_mag
@@ -251,12 +350,11 @@ function process_dpad()
   ship_rot -= rot_mag
  end
  if btn(up) then
-  fire_thruster()
+  fire_rthruster()
  end
-end
-
-function shoot()
--- TODO
+ if btn(down) then
+  fire_fthruster()
+ end
 end
 
 function process_btns()
@@ -285,26 +383,21 @@ end
 function _update()
  process_dpad()
  process_btns()
+ move_shots()
+ expire_shots()
  move_ship()
 end
 
 function _draw()
  cls()
  rectfill(0,0,127,127,1)
--- print_shp(shape1)
--- draw_shp(shape1)
--- draw_shp(trans_shp(shape1,{63,63}))
--- print(dist({0,0},{3,3}))
--- print_pnt(rot_pnt({2,0},{1,0},0.5))
 
-draw_shp(
- rot_shp(
-  trans_shp(ship_shp,ship_pos),
-  ship_rot))
+ draw_shp(
+  rot_shp(
+   trans_shp(ship_shp,ship_pos),
+   ship_rot
+  )
+ )
 
--- print("x,y,rot: "..x..","..y..","..rot)
--- p = rot_pnt({x,y},rot)
--- circfill(p[1],p[2],3,8)
-
--- testrots(rot)
+ draw_shots()
 end
