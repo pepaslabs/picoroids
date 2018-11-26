@@ -1,6 +1,13 @@
 pico-8 cartridge // http://www.pico-8.com
 version 16
 __lua__
+-- picoroids: an asteroids
+-- clone for pico-8.
+-- by jason pepas.
+-- github/pepaslabs/picoroids
+-- mit licensed.
+
+--== globals ==--
 
 -- button constants
 left=0
@@ -52,6 +59,14 @@ shot_ttl=30
 -- the bullets which are
 -- currently in-flight.
 shots={}
+
+-- an "asteroid" is a position,
+-- a velocity vector, and a
+-- size class.
+roids={}
+
+
+--== functions ==--
 
 -- return a negated copy of a
 -- point.
@@ -233,6 +248,15 @@ function move_ship()
  )
 end
 
+function draw_ship()
+ draw_shp(
+  rot_shp(
+   trans_shp(ship_shp,ship_pos),
+   ship_rot
+  )
+ )
+end
+
 -- fire the thruster for one
 -- frame, updating the ship's
 -- velocity vector.
@@ -298,7 +322,7 @@ end
 function move_shots()
  shots2={}
  for s in all(shots) do
-  add(shots2,move_shot(s))
+  add(shots2, move_shot(s))
  end
  shots = shots2
 end
@@ -342,6 +366,62 @@ function shoot()
  add(shots, shot)
 end
 
+function spawn_roid()
+ pos = mod_pnt({
+  96 + rnd(63),
+  96 + rnd(63)
+ })
+ local size = 3
+ vvec = {
+   0.5/size + rnd(size)*0.1/size,
+   0
+ }
+ vvec = rot_pnt(vvec,rnd(100)/100.0)
+ local roid = {
+  pos,
+  vvec,
+  size
+ }
+ add(roids,roid)
+end
+
+-- returns a moved copy of an
+-- asteroid.
+function move_roid(r)
+ local pos = r[1]
+ local vvec = r[2]
+ pos = mod_pnt(vadd(pos, vvec))
+ return {
+   pos,
+   vvec,
+   r[3]
+ }
+end
+
+-- move all of the asteroids.
+function move_roids()
+ roids2 = {}
+ for r in all(roids) do
+  add(roids2, move_roid(r))
+ end
+ roids = roids2
+end
+
+-- draw an asteroid.
+function draw_roid(r)
+ pos = r[1]
+ size_class = r[3]
+ rad = size_class * 3
+ circfill(pos[1],pos[2],rad,7)
+end
+
+-- draw all of the asteroids.
+function draw_roids()
+ for r in all(roids) do
+  draw_roid(r)
+ end
+end
+
 function process_dpad()
  if btn(left) then
   ship_rot += rot_mag
@@ -378,11 +458,16 @@ function process_btns()
 end
 
 function _init()
+ spawn_roid()
+ spawn_roid()
+ spawn_roid()
+ spawn_roid()
 end
 
 function _update()
  process_dpad()
  process_btns()
+ move_roids()
  move_shots()
  expire_shots()
  move_ship()
@@ -391,13 +476,7 @@ end
 function _draw()
  cls()
  rectfill(0,0,127,127,1)
-
- draw_shp(
-  rot_shp(
-   trans_shp(ship_shp,ship_pos),
-   ship_rot
-  )
- )
-
+ draw_ship()
  draw_shots()
+ draw_roids()
 end
