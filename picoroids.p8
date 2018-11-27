@@ -46,6 +46,8 @@ ship_vvec={0,0}
 fire_ff=false
 -- the teleport flip-flop
 tele_ff=false
+-- whether the player is alive
+alive=true
 
 -- a "shot" is a position, a
 -- velocity vector, and a ttl.
@@ -79,7 +81,7 @@ function copy_pnt(p)
  return {p[1], p[2]}
 end
 
--- return a copy of the  points
+-- return a copy of the points
 -- of a shape.
 function points(s)
  local ps = {}
@@ -366,12 +368,11 @@ function shoot()
  add(shots, shot)
 end
 
-function spawn_roid()
+function spawn_roid(size)
  pos = mod_pnt({
   96 + rnd(63),
   96 + rnd(63)
  })
- local size = 3
  vvec = {
    0.5/size + rnd(size)*0.1/size,
    0
@@ -407,11 +408,17 @@ function move_roids()
  roids = roids2
 end
 
+-- return the radius of an
+-- asteroid.
+function roidrad(r)
+ return r[3] * 3
+end
+
 -- draw an asteroid.
 function draw_roid(r)
  pos = r[1]
  size_class = r[3]
- rad = size_class * 3
+ rad = roidrad(r)
  circfill(pos[1],pos[2],rad,7)
 end
 
@@ -457,26 +464,77 @@ function process_btns()
  end
 end
 
+-- detect collisions between
+-- shots and asteroids.
+function collide_shots()
+ for s in all(shots) do
+  for r in all(roids) do
+   local spos = s[1]
+   local rpos = r[1]
+   local rad = roidrad(r)
+   local d = dist(spos,rpos)
+   if d <= rad then
+    del(shots,s)
+    del(roids,r)
+   end
+  end
+ end
+end
+
+function collide_ship()
+ local ship = rot_shp(
+  trans_shp(ship_shp,ship_pos),
+  ship_rot
+ )
+ for r in all(roids) do
+  local rpos = r[1]
+  local rad = roidrad(r)
+  for p in all(points(ship)) do
+   local d = dist(rpos,p)
+   if d < rad then
+    alive = false
+    return nil
+   end
+  end
+ end
+end
+
 function _init()
- spawn_roid()
- spawn_roid()
- spawn_roid()
- spawn_roid()
+ spawn_roid(3)
+ spawn_roid(3)
+ spawn_roid(3)
+ spawn_roid(2)
+ spawn_roid(2)
+ spawn_roid(2)
+ spawn_roid(1)
+ spawn_roid(1)
+ spawn_roid(1)
 end
 
 function _update()
- process_dpad()
- process_btns()
+ if alive then
+  process_dpad()
+  process_btns()
+ end
  move_roids()
  move_shots()
  expire_shots()
- move_ship()
+ collide_shots()
+ if alive then
+  collide_ship()
+  move_ship()
+ end
 end
 
 function _draw()
  cls()
  rectfill(0,0,127,127,1)
- draw_ship()
+ if alive then
+  draw_ship()
+ end
  draw_shots()
  draw_roids()
+ if not alive then
+  print("wasted",51,61,8)
+ end
 end
