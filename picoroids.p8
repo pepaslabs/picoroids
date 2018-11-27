@@ -237,7 +237,7 @@ end
 
 -- mod a point by 128
 function mod_pnt(p)
- return {p[1]%128,p[2]%128}
+ return {p[1]%128, p[2]%128}
 end
 
 -- move the ship by applying
@@ -321,6 +321,7 @@ function move_shot(s)
  return shot
 end
 
+-- move all of the shots.
 function move_shots()
  shots2={}
  for s in all(shots) do
@@ -368,6 +369,8 @@ function shoot()
  add(shots, shot)
 end
 
+-- create a new asteroid of a
+-- given size class (1-3)
 function spawn_roid(size)
  pos = mod_pnt({
   96 + rnd(63),
@@ -429,6 +432,7 @@ function draw_roids()
  end
 end
 
+-- read and process the dpad.
 function process_dpad()
  if btn(left) then
   ship_rot += rot_mag
@@ -444,6 +448,7 @@ function process_dpad()
  end
 end
 
+-- read and process the buttons.
 function process_btns()
  if btn(but1) then
   if not fire_ff then
@@ -481,6 +486,8 @@ function collide_shots()
  end
 end
 
+-- detect collisions between
+-- asteroids and the ship.
 function collide_ship()
  local ship = rot_shp(
   trans_shp(ship_shp,ship_pos),
@@ -521,8 +528,8 @@ function _update()
  expire_shots()
  collide_shots()
  if alive then
-  collide_ship()
   move_ship()
+  collide_ship()
  end
 end
 
