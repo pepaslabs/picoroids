@@ -10,12 +10,12 @@ __lua__
 --== globals ==--
 
 -- button constants
-left=0
-right=1
-up=2
-down=3
-but1=4
-but2=5
+left = 0
+right = 1
+up = 2
+down = 3
+but1 = 4
+but2 = 5
 
 -- a "shape" is a list of
 -- points. the first point is
@@ -35,37 +35,37 @@ ship_shp = {
 -- the ship's position
 ship_pos = {x=63, y=63}
 -- the ship's rotation
-ship_rot=0.25
+ship_rot = 0.25
 -- the thruster force magnitude
-thrst_mag=0.05
+thrst_mag = 0.05
 -- the magnitude of rotation
-rot_mag=0.02
+rot_mag = 0.02
 -- the ship's velocity vector
-ship_vvec={x=0,y=0}
+ship_vvec = {x=0,y=0}
 -- the fire button flip-flop
-fire_ff=false
+fire_ff = false
 -- the teleport flip-flop
-tele_ff=false
+tele_ff = false
 -- whether the player is alive
-alive=true
+alive = true
 
 -- a "shot" is a position, a
 -- velocity vector, and a ttl.
 
--- the speed of bullets.
-shot_spd=2.5
--- number of frames a bullet
--- stays on-screen.
-shot_ttl=30
-
 -- the bullets which are
 -- currently in-flight.
-shots={}
+shots = {}
+
+-- the speed of bullets.
+shot_spd = 2.5
+-- number of frames a bullet
+-- stays on-screen.
+shot_ttl = 30
 
 -- an "asteroid" is a position,
 -- a velocity vector, and a
 -- size class.
-roids={}
+roids = {}
 
 
 --== functions ==--
@@ -150,7 +150,7 @@ function rot_pnt(p,t)
  local cost = cos(t)
  rx = cost * p.x - sint * p.y
  ry = sint * p.x + cost * p.y
- return {x=rx, y=ry} 
+ return {x=rx, y=ry}
 end
 
 -- return a rotated copy of a
@@ -297,8 +297,7 @@ function teleport()
 end
 
 function draw_shot(s)
- local pos = s[1]
- pset(pos.x, pos.y, 7)
+ pset(s.pos.x, s.pos.y, 7)
 end
 
 function draw_shots(s)
@@ -310,14 +309,13 @@ end
 -- returns a copy of a shot
 -- which has been moved.
 function move_shot(s)
- local pos = s[1]
- local vvec = s[2]
- local ttl = s[3]
- pos = mod_pnt(vadd(pos, vvec))
+ local pos = mod_pnt(
+  vadd(s.pos, s.vvec)
+ )
  shot = {
-   pos,
-   vvec,
-   ttl-1
+  pos = pos,
+  vvec = s.vvec,
+  ttl = s.ttl - 1
  }
  return shot
 end
@@ -337,10 +335,7 @@ end
 function expire_shots()
  shots2 = {}
  for s in all(shots) do
-  local pos = s[1]
-  local vvec = s[2]
-  local ttl = s[3]
-  if ttl > 0 then
+  if s.ttl > 0 then
    add(shots2, s)
   end
  end
@@ -364,9 +359,9 @@ function shoot()
  )
 
  local shot = {
-  pos,
-  vvec,
-  shot_ttl
+  pos = pos,
+  vvec = vvec,
+  ttl = shot_ttl
  }
  add(shots, shot)
 end
@@ -438,6 +433,42 @@ function draw_roids()
  end
 end
 
+-- detect collisions between
+-- shots and asteroids.
+function collide_shots()
+ for s in all(shots) do
+  for r in all(roids) do
+   local rpos = r[1]
+   local rad = roidrad(r)
+   local d = dist(s.pos,rpos)
+   if d <= rad then
+    del(shots,s)
+    del(roids,r)
+   end
+  end
+ end
+end
+
+-- detect collisions between
+-- asteroids and the ship.
+function collide_ship()
+ local ship = rot_shp(
+  trans_shp(ship_shp,ship_pos),
+  ship_rot
+ )
+ for r in all(roids) do
+  local rpos = r[1]
+  local rad = roidrad(r)
+  for p in all(points(ship)) do
+   local d = dist(rpos,p)
+   if d < rad then
+    alive = false
+    return nil
+   end
+  end
+ end
+end
+
 -- read and process the dpad.
 function process_dpad()
  if btn(left) then
@@ -464,7 +495,7 @@ function process_btns()
  else
   fire_ff=false
  end
-
+ 
  if btn(but2) then
   if not tele_ff then
    tele_ff=true
@@ -472,43 +503,6 @@ function process_btns()
   end
  else
   tele_ff=false
- end
-end
-
--- detect collisions between
--- shots and asteroids.
-function collide_shots()
- for s in all(shots) do
-  for r in all(roids) do
-   local spos = s[1]
-   local rpos = r[1]
-   local rad = roidrad(r)
-   local d = dist(spos,rpos)
-   if d <= rad then
-    del(shots,s)
-    del(roids,r)
-   end
-  end
- end
-end
-
--- detect collisions between
--- asteroids and the ship.
-function collide_ship()
- local ship = rot_shp(
-  trans_shp(ship_shp,ship_pos),
-  ship_rot
- )
- for r in all(roids) do
-  local rpos = r[1]
-  local rad = roidrad(r)
-  for p in all(points(ship)) do
-   local d = dist(rpos,p)
-   if d < rad then
-    alive = false
-    return nil
-   end
-  end
  end
 end
 
