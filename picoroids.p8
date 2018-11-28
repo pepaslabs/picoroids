@@ -445,7 +445,7 @@ end
 -- create a new asteroid of a
 -- given size class (1-3).
 function spawn_roid(size)
- r = {}
+ local r = {}
  r.pos = mod_pnt({
   -- try to avoid the center
   x = 96 + rnd(63),
@@ -457,7 +457,7 @@ function spawn_roid(size)
  }
  r.vvec = rot_pnt(
   r.vvec,
-  rnd(100)/100.0
+  rnd(360)/360.0
  )
  r.size = size
  return r
@@ -494,7 +494,7 @@ end
 
 -- return a moved copy of all
 -- the asteroids.
-function moved_roids()
+function moved_roids(roids)
  local roids2 = {}
  for r in all(roids) do
   add(roids2, moved_roid(r))
@@ -515,7 +515,7 @@ function draw_roid(r)
 end
 
 -- draw the asteroids.
-function draw_roids()
+function draw_roids(roids)
  for r in all(roids) do
   draw_roid(r)
  end
