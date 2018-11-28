@@ -59,10 +59,16 @@ kshot_ttl = 30
 -- status.
 gship = nil
 
--- the fire button flip-flop
+-- the fire button flip-flop.
 gfire_ff = false
--- the teleport flip-flop
+-- the teleport flip-flop.
 gtele_ff = false
+
+-- the "wasted" timer.
+-- 90..1: dead
+-- 0: respawn
+-- -1: alive
+gdead_ttl = -1
 
 -- a "shot" is a position, a
 -- velocity vector, and a ttl.
@@ -268,16 +274,6 @@ end
 
 --== ship functions ==--
 
--- create and return a ship.
-function spawn_ship()
- local s = {}
- s.pos = {x=63, y=63}
- s.vvec = {x=0, y=0}
- s.rot = 0.25
- s.alive = true
- return s
-end
-
 -- return a copy of a ship.
 function copy_ship(s)
  local s2 = {}
@@ -441,27 +437,6 @@ end
 
 --== asteroid functions ==--
 
--- create a new asteroid of a
--- given size class (1-3).
-function spawn_roid(size)
- local r = {}
- r.pos = mod_pnt({
-  -- try to avoid the center
-  x = 96 + rnd(63),
-  y = 96 + rnd(63)
- })
- r.vvec = {
-  x = 0.5/size + rnd(size) * 0.1/size,
-  y = 0
- }
- r.vvec = rot_pnt(
-  r.vvec,
-  rnd(360)/360.0
- )
- r.size = size
- return r
-end
-
 -- return a copy of an asteroid.
 function copy_roid(r)
  local r2 = {}
@@ -614,9 +589,40 @@ function process_btns(ship,shots)
 end
 
 
---== pico-8 functions ==--
+--== spawning functions ==--
 
-function _init()
+-- create and return a ship.
+function spawn_ship()
+ local s = {}
+ s.pos = {x=63, y=63}
+ s.vvec = {x=0, y=0}
+ s.rot = 0.25
+ s.alive = true
+ return s
+end
+
+-- create a new asteroid of a
+-- given size class (1-3).
+function spawn_roid(size)
+ local r = {}
+ r.pos = mod_pnt({
+  -- try to avoid the center
+  x = 96 + rnd(63),
+  y = 96 + rnd(63)
+ })
+ r.vvec = {
+  x = 0.5/size + rnd(size) * 0.1/size,
+  y = 0
+ }
+ r.vvec = rot_pnt(
+  r.vvec,
+  rnd(360)/360.0
+ )
+ r.size = size
+ return r
+end
+
+function respawn()
  gship = spawn_ship()
  groids = {
   spawn_roid(3),
@@ -631,25 +637,52 @@ function _init()
  }
 end
 
+
+--== pico-8 functions ==--
+
+function _init()
+ respawn()
+end
+
 function _update()
  local shp = copy_ship(gship)
  local shts = copy_shots(gshots)
  local r = copy_roids(groids)
+
  if shp.alive then
   shp = process_dpad(shp)
   shp,shts = process_btns(shp,shts)
  end
+
  r = moved_roids(r)
  shts = moved_shots(shts)
  shts = rm_expired_shots(shts)
  shts,r = collided_shots(shts, r)
+
  if shp.alive then
   shp = moved_ship(shp)
   shp = collided_ship(shp, r)
  end
+
  gship = shp
  gshots = shts
  groids = r
+
+ if gship.alive == false
+ then
+  if gdead_ttl < 0
+  then gdead_ttl = 90
+  else
+   if gdead_ttl > 0
+   then gdead_ttl -= 1
+   else
+    if gdead_ttl == 0 then
+     gdead_ttl = -1
+     respawn()
+    end
+   end
+  end
+ end
 end
 
 function _draw()
