@@ -4,18 +4,22 @@ __lua__
 -- picoroids: an asteroids
 -- clone for pico-8.
 -- by jason pepas.
--- github/pepaslabs/picoroids
+-- https://github.com/pepaslabs/picoroids
 -- mit licensed.
 
---== globals ==--
+
+--== constants ==--
+
+-- note: constants are prefixed
+-- with a "k".
 
 -- button constants
-left = 0
-right = 1
-up = 2
-down = 3
-but1 = 4
-but2 = 5
+kleft = 0
+kright = 1
+kup = 2
+kdown = 3
+kbut1 = 4
+kbut2 = 5
 
 -- a "shape" is a list of
 -- points. the first point is
@@ -25,21 +29,31 @@ but2 = 5
 -- are drawn.
 
 -- the ship shape
-ship_shp = {
+kship_shp = {
  {x=0,y=0},
  {x=5,y=0},
  {x=-3,y=-3},
  {x=-3,y=3}
 }
 
+-- the thruster force magnitude
+kthrst_mag = 0.05
+-- the magnitude of rotation
+krot_mag = 0.02
+
+-- the speed of bullets.
+kshot_spd = 2.5
+-- number of frames a bullet
+-- stays on-screen.
+kshot_ttl = 30
+
+
+--== globals ==--
+
 -- the ship's position
 ship_pos = {x=63, y=63}
 -- the ship's rotation
 ship_rot = 0.25
--- the thruster force magnitude
-thrst_mag = 0.05
--- the magnitude of rotation
-rot_mag = 0.02
 -- the ship's velocity vector
 ship_vvec = {x=0,y=0}
 -- the fire button flip-flop
@@ -55,12 +69,6 @@ alive = true
 -- the bullets which are
 -- currently in-flight.
 shots = {}
-
--- the speed of bullets.
-shot_spd = 2.5
--- number of frames a bullet
--- stays on-screen.
-shot_ttl = 30
 
 -- an "asteroid" is a position,
 -- a velocity vector, and a
@@ -248,7 +256,7 @@ end
 function draw_ship()
  draw_shp(
   rot_shp(
-   trans_shp(ship_shp,ship_pos),
+   trans_shp(kship_shp,ship_pos),
    ship_rot
   )
  )
@@ -259,7 +267,7 @@ end
 -- velocity vector.
 function fire_rthruster()
  local thrst_v = {
-  x = thrst_mag,
+  x = kthrst_mag,
   y = 0
  }
  thrst_v = rot_pnt(
@@ -275,7 +283,7 @@ end
 -- ship backward.
 function fire_fthruster()
  local thrst_v = {
-  x = -thrst_mag,
+  x = -kthrst_mag,
   y = 0
  }
  thrst_v = rot_pnt(
@@ -348,7 +356,7 @@ function shoot()
  local pos = copy_pnt(ship_pos)
  -- the bullet velocity vector
  local vvec = {
-  x = shot_spd,
+  x = kshot_spd,
   y = 0
  }
  vvec = rot_pnt(
@@ -361,7 +369,7 @@ function shoot()
  local shot = {
   pos = pos,
   vvec = vvec,
-  ttl = shot_ttl
+  ttl = kshot_ttl
  }
  add(shots, shot)
 end
@@ -450,7 +458,7 @@ end
 -- asteroids and the ship.
 function collide_ship()
  local ship = rot_shp(
-  trans_shp(ship_shp,ship_pos),
+  trans_shp(kship_shp,ship_pos),
   ship_rot
  )
  for r in all(roids) do
@@ -467,23 +475,23 @@ end
 
 -- read and process the dpad.
 function process_dpad()
- if btn(left) then
-  ship_rot += rot_mag
+ if btn(kleft) then
+  ship_rot += krot_mag
  end
- if btn(right) then
-  ship_rot -= rot_mag
+ if btn(kright) then
+  ship_rot -= krot_mag
  end
- if btn(up) then
+ if btn(kup) then
   fire_rthruster()
  end
- if btn(down) then
+ if btn(kdown) then
   fire_fthruster()
  end
 end
 
 -- read and process the buttons.
 function process_btns()
- if btn(but1) then
+ if btn(kbut1) then
   if not fire_ff then
    fire_ff=true
    shoot()
@@ -492,7 +500,7 @@ function process_btns()
   fire_ff=false
  end
  
- if btn(but2) then
+ if btn(kbut2) then
   if not tele_ff then
    tele_ff=true
    teleport()
