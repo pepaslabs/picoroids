@@ -508,9 +508,10 @@ end
 
 -- return a copy of shots and
 -- roids after colliding them.
-function collided_shots(shots,roids)
+function collided_shots(shots,roids,lvl)
  local ss2 = copy_shots(shots)
  local rs2 = copy_roids(roids)
+ local newrs = {}
  for s in all(ss2) do
   for r in all(rs2) do
    local rad = roid_rad(r)
@@ -518,8 +519,21 @@ function collided_shots(shots,roids)
    if d <= rad then
     del(ss2, s)
     del(rs2, r)
+    -- break up the roid into
+    -- two smaller pieces.
+    if r.size > 1 then
+     newr = spawn_roid(r.size-1,lvl)
+     newr.pos = r.pos
+     add(newrs,newr)
+     newr = spawn_roid(r.size-1,lvl)
+     newr.pos = r.pos
+     add(newrs, newr)
+    end
    end
   end
+ end
+ for r in all(newrs) do
+  add(rs2,r)
  end
  return ss2, rs2
 end
@@ -623,7 +637,7 @@ function spawn_roid(size, level)
   -- the asteroid velocity is
  -- a fixed component based on
  -- size...
- r.vvec.x = 0.5/size
+ r.vvec.x = 0.3/size
  -- ...plus a random component
  -- based on size...
  r.vvec.x += rnd(size) * 0.1/size
@@ -672,7 +686,7 @@ function _update()
  r = moved_roids(r)
  shts = moved_shots(shts)
  shts = rm_expired_shots(shts)
- shts,r = collided_shots(shts, r)
+ shts,r = collided_shots(shts,r,glevel)
 
  if shp.alive then
   shp = moved_ship(shp)
