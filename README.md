@@ -1,6 +1,6 @@
 # picoroids
 
-Asteroids for PICO-8
+An Asteroids clone for [PICO-8](https://www.lexaloffle.com/pico-8.php).
 
 ![](assets/picoroids.gif)
 
