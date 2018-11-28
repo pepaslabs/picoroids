@@ -57,7 +57,6 @@ kshot_ttl = 30
 -- velocity vector, a rotation,
 -- a set of shots, and an alive
 -- status.
-
 gship = nil
 
 -- the fire button flip-flop
@@ -143,6 +142,8 @@ end
 
 -- return a copy of a point
 -- rotated about the origin.
+-- p: point to rotate
+-- t: number of turns
 function rot_pnt(p, t)
 -- https://en.wikipedia.org/wiki/Rotation_matrix#In_two_dimensions
  return {
@@ -153,12 +154,10 @@ end
 
 -- return a copy of a point
 -- rotated about another point.
--- return a rotated copy of a
--- point.
 -- p: point to rotate
 -- c: center point of rotation
 -- t: number of turns
-function rot_pnt2(p, c, t)
+function rot_pntc(p, c, t)
 -- thanks to https://stackoverflow.com/q/2259476/558735
 -- 1. translate point to origin
 -- 2. rotate point
@@ -226,7 +225,7 @@ function rot_shp(s, t)
  local c = s[1]
  local s2 = {}
  for p in all(s) do
-  add(s2, rot_pnt2(p, c, t))
+  add(s2, rot_pntc(p, c, t))
  end
  return s2
 end
@@ -398,7 +397,7 @@ function moved_shot(s)
   vadd(s.pos, s.vvec)
  )
  s2.ttl -= 1
- return shot
+ return s2
 end
 
 -- return a moved copy of
@@ -414,7 +413,7 @@ end
 -- return a copy of the shots
 -- with the expired shots
 -- removed.
-function expired_shots(shots)
+function rm_expired_shots(shots)
  local shots2 = {}
  for s in all(shots) do
   if s.ttl > 0 then
@@ -526,9 +525,9 @@ end
 
 -- return a copy of shots and
 -- roids after colliding them.
-function collided_shots(ss, rs)
- local ss2 = copy_shots(ss)
- local rs2 = copy_roids(rs)
+function collided_shots(shots,roids)
+ local ss2 = copy_shots(shots)
+ local rs2 = copy_roids(roids)
  for s in all(ss2) do
   for r in all(rs2) do
    local rad = roid_rad(r)
@@ -539,17 +538,17 @@ function collided_shots(ss, rs)
    end
   end
  end
- return ss,rs
+ return ss2, rs2
 end
 
 -- return a copy of the ship
 -- after colliding it with the
 -- asteroids.
-function collided_ship(s, rs)
- local s2 = copy_ship(s)
+function collided_ship(ship,roids)
+ local s2 = copy_ship(ship)
  local shape = ship_shape(s2)
  for r in all(roids) do
-  local rad = roidrad(r)
+  local rad = roid_rad(r)
   for p in all(shp_points(shape)) do
    local d = dist(r.pos, p)
    if d < rad then
@@ -567,8 +566,8 @@ end
 -- return an updated ship after
 -- reading and processing the
 -- arrow keys.
-function process_dpad(s)
- local s2 = copy_ship(s)
+function process_dpad(ship)
+ local s2 = copy_ship(ship)
  if btn(kleft) then
   s2.rot += krot_mag
  end
@@ -587,14 +586,15 @@ end
 -- return an updated ship after
 -- reading and processing the
 -- buttons.
-function process_btns(s)
- local s2 = copy_ship(s)
+function process_btns(ship,shots)
+ local shp2 = copy_ship(ship)
+ local shts2 = copy_shots(shots)
  if btn(kbut1) then
   if not gfire_ff then
    gfire_ff = true
    add(
-    gshots,
-    spawn_shot(s2)
+    shts2,
+    spawn_shot(shp2)
    )
   end
  else
@@ -604,13 +604,13 @@ function process_btns(s)
  if btn(kbut2) then
   if not gtele_ff then
    gtele_ff = true
-   s2 = teleport(s2)
+   shp2 = teleport(shp2)
   end
  else
   gtele_ff = false
  end
 
- return s2
+ return shp2, shts2
 end
 
 
@@ -633,22 +633,22 @@ end
 
 function _update()
  local shp = copy_ship(gship)
- local sht = copy_shots(gshots)
+ local shts = copy_shots(gshots)
  local r = copy_roids(groids)
  if shp.alive then
   shp = process_dpad(shp)
-  shp = process_btns(shp)
+  shp,shts = process_btns(shp,shts)
  end
  r = moved_roids(r)
- sht = moved_shots(sht)
- sht = expired_shots(sht)
- sht,r = collided_shots(sht, r)
+ shts = moved_shots(shts)
+ shts = rm_expired_shots(shts)
+ shts,r = collided_shots(shts, r)
  if shp.alive then
   shp = moved_ship(shp)
   shp = collided_ship(shp, r)
  end
  gship = shp
- gshots = sht
+ gshots = shts
  groids = r
 end
 
