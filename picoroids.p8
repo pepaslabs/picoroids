@@ -37,7 +37,7 @@ kship_shp = {
 }
 
 -- the thruster force magnitude
-kthrst_mag = 0.05
+kthrst_mag = 0.035
 -- the magnitude of rotation
 krot_mag = 0.02
 
@@ -610,18 +610,28 @@ function spawn_ship()
 end
 
 -- create a new asteroid of a
--- given size class (1-3).
-function spawn_roid(size)
+-- given size class (1-3) and a
+-- given level.
+function spawn_roid(size, level)
  local r = {}
  r.pos = mod_pnt({
   -- try to avoid the center
   x = 96 + rnd(63),
   y = 96 + rnd(63)
  })
- r.vvec = {
-  x = 0.5/size + rnd(size) * 0.1/size,
-  y = 0
- }
+ r.vvec = {x=0,y=0}
+  -- the asteroid velocity is
+ -- a fixed component based on
+ -- size...
+ r.vvec.x = 0.5/size
+ -- ...plus a random component
+ -- based on size...
+ r.vvec.x += rnd(size) * 0.1/size
+ -- ...plus a random component
+ -- based on level (up to 20%
+ -- per level).
+ r.vvec.x *= (1 + rnd(20*level)/100.0)
+ -- pointed in random direction.
  r.vvec = rot_pnt(
   r.vvec,
   rnd(360)/360.0
@@ -636,9 +646,9 @@ function respawn(lvl)
  end
  groids = {}
  for i=1, lvl do
-  add(groids, spawn_roid(3))
-  add(groids, spawn_roid(2))
-  add(groids, spawn_roid(1))
+  add(groids, spawn_roid(3,lvl))
+  add(groids, spawn_roid(2,lvl))
+  add(groids, spawn_roid(1,lvl))
  end
 end
 
