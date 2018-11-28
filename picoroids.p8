@@ -71,7 +71,7 @@ gtele_ff = false
 gdead_ttl = -1
 
 -- the "win" timer.
--- 90..1: you won
+-- 150..1: you won
 -- 0: respawn
 -- -1: playing
 gwinner_ttl = -1
@@ -88,6 +88,8 @@ gshots = {}
 -- size class.
 groids = {}
 
+-- the current round of play.
+glevel = 1
 
 --== math functions ==--
 
@@ -628,26 +630,23 @@ function spawn_roid(size)
  return r
 end
 
-function respawn()
- gship = spawn_ship()
- groids = {
-  spawn_roid(3),
-  spawn_roid(3),
-  spawn_roid(3),
-  spawn_roid(2),
-  spawn_roid(2),
-  spawn_roid(2),
-  spawn_roid(1),
-  spawn_roid(1),
-  spawn_roid(1)
- }
+function respawn(lvl)
+ if gship == nil or gship.alive == false
+ then gship = spawn_ship()
+ end
+ groids = {}
+ for i=1, lvl do
+  add(groids, spawn_roid(3))
+  add(groids, spawn_roid(2))
+  add(groids, spawn_roid(1))
+ end
 end
 
 
 --== pico-8 functions ==--
 
 function _init()
- respawn()
+ respawn(glevel)
 end
 
 function _update()
@@ -676,29 +675,31 @@ function _update()
 
  if not gship.alive
  then
-  if gdead_ttl < 0
-  then gdead_ttl = 90
+  if gdead_ttl < 0 then
+   gdead_ttl = 90
+   glevel = 1
   else
    if gdead_ttl > 0
    then gdead_ttl -= 1
    else
     if gdead_ttl == 0 then
      gdead_ttl = -1
-     respawn()
+     respawn(glevel)
     end
    end
   end
  else
   if #groids == 0 then
-   if gwinner_ttl < 0
-   then gwinner_ttl = 90
+   if gwinner_ttl < 0 then
+    gwinner_ttl = 150
+    glevel += 1
    else
     if gwinner_ttl > 0
     then gwinner_ttl -= 1
     else
      if gwinner_ttl == 0 then
       gwinner_ttl = -1
-      respawn()
+      respawn(glevel)
      end
     end
    end
@@ -717,8 +718,12 @@ function _draw()
  if gdead_ttl > 0 then
   print("wasted", 51, 61, 8)
  else
-  if gwinner_ttl > 0 then
+  if gwinner_ttl > 60 then
    print("a winner is you", 33, 61, 11)
+  else
+   if gwinner_ttl > 0 then
+    print("level "..glevel, 48, 61, 9)
+   end
   end
  end
 end
