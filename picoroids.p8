@@ -383,9 +383,9 @@ function spawn_roid(size)
   rnd(100)/100.0
  )
  local roid = {
-  pos,
-  vvec,
-  size
+  pos = pos,
+  vvec = vvec,
+  size = size
  }
  add(roids,roid)
 end
@@ -393,13 +393,13 @@ end
 -- returns a moved copy of an
 -- asteroid.
 function move_roid(r)
- local pos = r[1]
- local vvec = r[2]
- pos = mod_pnt(vadd(pos, vvec))
+ local pos = mod_pnt(
+  vadd(r.pos, r.vvec)
+ )
  return {
-   pos,
-   vvec,
-   r[3]
+  pos = pos,
+  vvec = r.vvec,
+  size = r.size
  }
 end
 
@@ -415,15 +415,13 @@ end
 -- return the radius of an
 -- asteroid.
 function roidrad(r)
- return r[3] * 3
+ return r.size * 3
 end
 
 -- draw an asteroid.
 function draw_roid(r)
- pos = r[1]
- size_class = r[3]
  rad = roidrad(r)
- circfill(pos.x,pos.y,rad,7)
+ circfill(r.pos.x,r.pos.y,rad,7)
 end
 
 -- draw all of the asteroids.
@@ -438,9 +436,8 @@ end
 function collide_shots()
  for s in all(shots) do
   for r in all(roids) do
-   local rpos = r[1]
    local rad = roidrad(r)
-   local d = dist(s.pos,rpos)
+   local d = dist(s.pos,r.pos)
    if d <= rad then
     del(shots,s)
     del(roids,r)
@@ -457,10 +454,9 @@ function collide_ship()
   ship_rot
  )
  for r in all(roids) do
-  local rpos = r[1]
   local rad = roidrad(r)
   for p in all(points(ship)) do
-   local d = dist(rpos,p)
+   local d = dist(r.pos, p)
    if d < rad then
     alive = false
     return nil
