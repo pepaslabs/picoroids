@@ -70,6 +70,12 @@ gtele_ff = false
 -- -1: alive
 gdead_ttl = -1
 
+-- the "win" timer.
+-- 90..1: you won
+-- 0: respawn
+-- -1: playing
+gwinner_ttl = -1
+
 -- a "shot" is a position, a
 -- velocity vector, and a ttl.
 
@@ -668,7 +674,7 @@ function _update()
  gshots = shts
  groids = r
 
- if gship.alive == false
+ if not gship.alive
  then
   if gdead_ttl < 0
   then gdead_ttl = 90
@@ -679,6 +685,21 @@ function _update()
     if gdead_ttl == 0 then
      gdead_ttl = -1
      respawn()
+    end
+   end
+  end
+ else
+  if #groids == 0 then
+   if gwinner_ttl < 0
+   then gwinner_ttl = 90
+   else
+    if gwinner_ttl > 0
+    then gwinner_ttl -= 1
+    else
+     if gwinner_ttl == 0 then
+      gwinner_ttl = -1
+      respawn()
+     end
     end
    end
   end
@@ -693,7 +714,11 @@ function _draw()
  end
  draw_shots(gshots)
  draw_roids(groids)
- if not gship.alive then
+ if gdead_ttl > 0 then
   print("wasted", 51, 61, 8)
+ else
+  if gwinner_ttl > 0 then
+   print("a winner is you", 33, 61, 11)
+  end
  end
 end
