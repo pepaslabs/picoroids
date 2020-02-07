@@ -91,6 +91,13 @@ groids = {}
 -- the current round of play.
 glevel = 1
 
+-- a message to display to the user.
+gmsg = nil
+gmsg_x = nil
+gmsg_y = nil
+gmsg_color = nil
+
+
 --== math functions ==--
 
 -- return the square of x.
@@ -654,15 +661,81 @@ function spawn_roid(size, level)
  return r
 end
 
-function respawn(lvl)
- if gship == nil or gship.alive == false
- then gship = spawn_ship()
+-- respawn at level.
+function respawn(level, ship)
+ if ship == nil or ship.alive == false then
+  ship = spawn_ship()
  end
- groids = {}
- for i=1, lvl do
-  add(groids, spawn_roid(3,lvl))
-  add(groids, spawn_roid(2,lvl))
-  add(groids, spawn_roid(1,lvl))
+ roids = {}
+ for i=1, level do
+  add(roids, spawn_roid(3, level))
+  add(roids, spawn_roid(2, level))
+  add(roids, spawn_roid(1, level))
+ end
+ return ship, roids
+end
+
+-- handle the dead case (msg and respawn).
+function process_death(ship, dead_ttl, winner_ttl, level, roids)
+ local respawn = false
+ if not ship.alive
+ then
+  if dead_ttl < 0 then
+   dead_ttl = 90
+   level = 1
+  else
+   if dead_ttl > 0
+   then dead_ttl -= 1
+   else
+    if dead_ttl == 0 then
+     dead_ttl = -1
+     respawn = true
+    end
+   end
+  end
+ else
+  if #roids == 0 then
+   if winner_ttl < 0 then
+    winner_ttl = 150
+    level += 1
+   else
+    if winner_ttl > 0
+    then winner_ttl -= 1
+    else
+     if winner_ttl == 0 then
+      winner_ttl = -1
+      respawn = true
+     end
+    end
+   end
+  end
+ end
+ return dead_ttl, winner_ttl, level, respawn
+end
+
+
+--== message functions ==--
+
+-- calculate the current message.
+function calc_msg(dead_ttl, winner_ttl, level)
+ if dead_ttl > 0 then
+  return "wasted", 51, 61, 8
+ else
+  if winner_ttl > 60 then
+   return "a winner is you", 33, 61, 11
+  else
+   if winner_ttl > 0 then
+    return "level "..level, 48, 61, 9
+   end
+  end
+ end
+ return nil, nil, nil, nil
+end
+
+-- display messages to the user.
+function draw_message(msg, x, y, color)
+ if msg ~= nil then
+  print(msg, x, y, color)
  end
 end
 
@@ -670,7 +743,7 @@ end
 --== pico-8 functions ==--
 
 function _init()
- respawn(glevel)
+ gship, groids = respawn(glevel, gship)
 end
 
 function _update()
@@ -696,39 +769,14 @@ function _update()
  gship = shp
  gshots = shts
  groids = r
-
- if not gship.alive
- then
-  if gdead_ttl < 0 then
-   gdead_ttl = 90
-   glevel = 1
-  else
-   if gdead_ttl > 0
-   then gdead_ttl -= 1
-   else
-    if gdead_ttl == 0 then
-     gdead_ttl = -1
-     respawn(glevel)
-    end
-   end
-  end
- else
-  if #groids == 0 then
-   if gwinner_ttl < 0 then
-    gwinner_ttl = 150
-    glevel += 1
-   else
-    if gwinner_ttl > 0
-    then gwinner_ttl -= 1
-    else
-     if gwinner_ttl == 0 then
-      gwinner_ttl = -1
-      respawn(glevel)
-     end
-    end
-   end
-  end
+ 
+ local respwn = false
+ gdead_ttl, gwinner_ttl, glevel, respwn = process_death(gship, gdead_ttl, gwinner_ttl, glevel, groids)
+ if respwn == true then
+  gship, groids = respawn(glevel, gship)
  end
+
+ gmsg, gmsg_x, gmsg_y, gmsg_color = calc_msg(gdead_ttl, gwinner_ttl, glevel)
 end
 
 function _draw()
@@ -739,15 +787,5 @@ function _draw()
  end
  draw_shots(gshots)
  draw_roids(groids)
- if gdead_ttl > 0 then
-  print("wasted", 51, 61, 8)
- else
-  if gwinner_ttl > 60 then
-   print("a winner is you", 33, 61, 11)
-  else
-   if gwinner_ttl > 0 then
-    print("level "..glevel, 48, 61, 9)
-   end
-  end
- end
+ draw_message(gmsg, gmsg_x, gmsg_y, gmsg_color)
 end
